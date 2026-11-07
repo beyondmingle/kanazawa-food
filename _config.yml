@@ -2,5 +2,5 @@
 # ここに書いたファイルは、サイトとしては公開されない（リポジトリには残る）
 exclude:
   - CLAUDE.md
+  - 運用手順.md
   - README.md
-  - news.csv

@@ -8,7 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+/* ============================================================
+   設定（ここだけ書き換える）
+   CSV_URL: スプレッドシートの public シートを「ウェブに公開」した CSV の URL
+   ============================================================ */
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vThJRjCp8JlplPg2mhxV8q5BX23rqKfzHQjTR9ifDtTND8GU3pAn6VUJFCG-sh5dtlwdP9QI_CBckJz/pub?gid=747522636&single=true&output=csv";
 // 1 ページに表示するお店の数
 const PAGE_SIZE = 20;
@@ -183,6 +189,39 @@ button, input, select { font: inherit; color: inherit; }
   padding: 0 8px; margin-right: 6px;
 }
 
+/* ---------- 一覧と地図の切り替え ---------- */
+.views {
+  margin-left: auto;
+  display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--white);
+}
+.views button {
+  border: 0; background: none; padding: 6px 18px; cursor: pointer; font-weight: 700; color: var(--ink-soft);
+}
+.views button[aria-pressed="true"] { background: var(--teal); color: var(--white); }
+.map {
+  height: 600px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--line); background: #efe8dc;
+  font-family: var(--font);
+}
+.map[hidden] { display: none; }
+.pin {
+  width: 26px; height: 26px; border-radius: 50% 50% 50% 0;
+  background: var(--camellia); border: 3px solid var(--white);
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+}
+.leaflet-popup-content { margin: 0; width: 220px !important; }
+.leaflet-popup-content-wrapper { border-radius: 8px; padding: 0; overflow: hidden; }
+.pop img.pop-photo { width: 100%; height: 120px; object-fit: cover; display: block; }
+.pop .plate { font-size: .95rem; padding: 6px 10px; }
+.pop .pop-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; font-size: .85rem; line-height: 1.5; }
+.pop .marks img { width: 24px; height: 24px; }
+.pop .open {
+  align-self: flex-start; border: 0; border-radius: 999px; padding: 5px 14px;
+  background: var(--camellia); color: var(--white); font-weight: 700; cursor: pointer; font-family: var(--font);
+}
+.gmap { width: 100%; height: 260px; border: 0; border-radius: 8px; margin-top: 18px; display: block; background: #efe8dc; }
+
 /* ---------- ページ送り ---------- */
 .pager {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px;
@@ -264,6 +303,9 @@ a { color: var(--teal); }
   .tile-body { padding: 8px 10px 12px; }
   .marks img { width: 24px; height: 24px; }
   .gallery img { height: 210px; }
+  .map { height: 460px; }
+  .views { margin-left: 0; }
+  .gmap { height: 220px; }
   .info { grid-template-columns: 1fr; gap: 0; }
   .info dd { margin-bottom: 8px; }
 }
@@ -302,10 +344,15 @@ a { color: var(--teal); }
     <p class="count" id="count" aria-live="polite" style="margin:0"></p>
     <span class="range" id="range"></span>
     <button class="clear" id="clear" type="button" hidden></button>
+    <div class="views" id="views">
+      <button type="button" data-view="list" aria-pressed="true"></button>
+      <button type="button" data-view="map" aria-pressed="false"></button>
+    </div>
   </div>
 
   <ul class="tiles" id="tiles"></ul>
   <nav class="pager" id="pager" hidden></nav>
+  <div class="map" id="map" hidden></div>
   <div class="state" id="state"></div>
 </div>
 
@@ -332,6 +379,10 @@ a { color: var(--teal); }
       prev: "前へ", next: "次へ",
       pagerLabel: "ページ送り",
       pageN: n => `${n}ページ目`,
+      viewList: "一覧", viewMap: "地図",
+      openDetail: "詳しく見る",
+      mapTitle: name => `${name}の地図`,
+      noMap: "地図を読み込めませんでした。",
       loading: "お店の情報を読み込んでいます…",
       failTitle: "お店の情報を読み込めませんでした",
       failBody: "通信状況を確かめて、ページを再読み込みしてください。",
@@ -360,6 +411,10 @@ a { color: var(--teal); }
       prev: "Previous", next: "Next",
       pagerLabel: "Pages",
       pageN: n => `Page ${n}`,
+      viewList: "List", viewMap: "Map",
+      openDetail: "See details",
+      mapTitle: name => `Map of ${name}`,
+      noMap: "Couldn’t load the map.",
       loading: "Loading restaurants…",
       failTitle: "Couldn’t load the restaurant list",
       failBody: "Check your connection and reload the page.",
@@ -398,7 +453,7 @@ a { color: var(--teal); }
   const L = (row, base) => (LANG === "en" && row[base + "_en"]) ? row[base + "_en"] : (row[base + "_ja"] || "");
   const yes = v => String(v).trim().toUpperCase() === "TRUE";
 
-  const state = { on: new Set(), area: "", q: "", page: 1 };
+  const state = { on: new Set(), area: "", q: "", page: 1, view: "list" };
   let shops = [];
 
   // ---------- 文言とフィルタ UI ----------
@@ -430,6 +485,14 @@ a { color: var(--teal); }
   });
   $("area").addEventListener("change", e => { state.area = e.target.value; state.page = 1; render(); });
   $("q").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); state.page = 1; render(); });
+  document.querySelector('#views [data-view="list"]').textContent = T.viewList;
+  document.querySelector('#views [data-view="map"]').textContent = T.viewMap;
+  $("views").addEventListener("click", e => {
+    const b = e.target.closest("[data-view]");
+    if (!b || state.view === b.dataset.view) return;
+    state.view = b.dataset.view;
+    render();
+  });
   $("clear").addEventListener("click", () => {
     state.on.clear(); state.area = ""; state.q = ""; state.page = 1;
     $("area").value = ""; $("q").value = "";
@@ -446,7 +509,7 @@ a { color: var(--teal); }
   // 画面を操作したあとの URL には、最初の条件の引数を残さない（言語などの設定だけ残す）
   const KEEP_SEARCH = (() => {
     const k = new URLSearchParams();
-    ["lang", "csv", "v"].forEach(n => params.has(n) && k.set(n, params.get(n)));
+    ["lang", "csv", "v", "view"].forEach(n => params.has(n) && k.set(n, params.get(n)));
     const q = k.toString();
     return q ? "?" + q : "";
   })();
@@ -480,6 +543,7 @@ a { color: var(--teal); }
     state.on = new Set(readHash());
   }
   if (state.q) $("q").value = state.q;
+  if ((handoff && handoff.view === "map") || params.get("view") === "map") state.view = "map";
   window.addEventListener("hashchange", () => { state.on = new Set(readHash()); state.page = 1; render(); });
 
   // ---------- CSV ----------
@@ -540,6 +604,18 @@ a { color: var(--teal); }
     const from = (state.page - 1) * PAGE_SIZE;
     const shown = list.slice(from, from + PAGE_SIZE);
     $("range").textContent = list.length > PAGE_SIZE ? T.range(from + 1, from + shown.length) : "";
+    document.querySelectorAll("#views [data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === state.view));
+    const onMap = state.view === "map";
+    $("tiles").hidden = onMap;
+    $("map").hidden = !onMap;
+    if (onMap) {
+      $("range").textContent = "";
+      renderPager(1);
+      $("tiles").innerHTML = "";
+      if (!list.length) showState(T.emptyTitle, T.emptyBody); else $("state").innerHTML = "";
+      renderMap(list);
+      return;
+    }
     renderPager(pages);
     if (!list.length) { showState(T.emptyTitle, T.emptyBody); return; }
     $("state").innerHTML = "";
@@ -555,6 +631,47 @@ a { color: var(--teal); }
         </div>
       </button></li>`;
     }).join("");
+  }
+
+  // ---------- 地図 ----------
+  let map = null, layer = null;
+  const markerHtml = s => {
+    const name = L(s, "name"), img = images(s)[0];
+    return `<div class="pop">
+      ${img ? `<img class="pop-photo" src="shops/${esc(img)}" alt="" onerror="this.remove()">` : ""}
+      <div class="plate">${esc(name)}</div>
+      <div class="pop-body">
+        <div class="marks">${bigMarks(s).map(f => `<img src="${f.icon}" alt="${esc(f[LANG].replace("\n", ""))}">`).join("")}</div>
+        <div>${L(s, "area") ? `<span class="area">${esc(L(s, "area"))}</span>` : ""}${esc(L(s, "address"))}</div>
+        <button class="open" type="button" data-open="${esc(s.shop_id)}">${esc(T.openDetail)}</button>
+      </div>
+    </div>`;
+  };
+  function renderMap(list) {
+    if (!window.L || !window.L.map) { $("map").innerHTML = `<div class="state">${esc(T.noMap)}</div>`; return; }
+    if (!map) {
+      map = window.L.map("map", { scrollWheelZoom: false });
+      window.L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+        attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">地理院タイル</a>',
+      }).addTo(map);
+      map.on("click", () => map.scrollWheelZoom.enable()); // 地図を一度押したら、ホイールで拡大縮小できる
+      $("map").addEventListener("click", e => {
+        const b = e.target.closest("[data-open]");
+        if (b) openDetail(shops.find(s => s.shop_id === b.dataset.open), b);
+      });
+    }
+    if (layer) layer.remove();
+    const icon = window.L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [26, 26], iconAnchor: [3, 26], popupAnchor: [10, -26] });
+    const pts = [];
+    layer = window.L.layerGroup(list.filter(s => s.lat && s.lng).map(s => {
+      const ll = [Number(s.lat), Number(s.lng)];
+      pts.push(ll);
+      return window.L.marker(ll, { icon, title: L(s, "name"), alt: L(s, "name") }).bindPopup(markerHtml(s), { maxWidth: 240, minWidth: 220 });
+    })).addTo(map);
+    map.invalidateSize();
+    if (pts.length) map.fitBounds(pts, { padding: [36, 36], maxZoom: 16 });
+    else map.setView([36.5613, 136.6562], 13); // 金沢駅あたり
   }
 
   function renderPager(pages) {
@@ -616,6 +733,7 @@ a { color: var(--teal); }
           ${row(T.smoking, esc(smoke))}
           ${row(T.website, s.website ? `<a href="${esc(s.website)}" target="_blank" rel="noopener">${esc(s.website)}</a>` : "")}
         </dl>
+        ${s.lat && s.lng ? `<iframe class="gmap" loading="lazy" title="${esc(T.mapTitle(name))}" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(s.lat + "," + s.lng)}&z=16&hl=${LANG}&output=embed"></iframe>` : ""}
         <div class="actions">
           <a href="${map}" target="_blank" rel="noopener">${esc(T.openMap)}</a>
           ${s.website ? `<a class="secondary" href="${esc(s.website)}" target="_blank" rel="noopener">${esc(T.openSite)}</a>` : ""}

@@ -53,9 +53,11 @@ button, input, select { font: inherit; color: inherit; }
   gap: 8px 28px;
   align-items: end;
 }
-.finder-art { display: flex; align-items: flex-end; gap: 4px; }
-.finder-art .bubble { width: 150px; margin-bottom: 150px; margin-right: -24px; }
-.finder-art .kaachan { width: 130px; }
+/* トップページと同じく、吹き出しはイラストの右上に出す（元サイトの比率: イラスト 192×298、吹き出し 204×88） */
+.finder-art { width: 270px; padding-top: 24px; }
+.finder-art .kc-wrap { position: relative; width: 130px; }
+.finder-art .kaachan { width: 100%; position: relative; z-index: 1; }
+.finder-art .bubble { position: absolute; z-index: 0; left: 84%; top: -14px; width: 138px; max-width: none; }
 .finder-main h1 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -333,8 +335,10 @@ a { color: var(--teal); }
 <div class="wrap">
   <section class="finder" aria-labelledby="finder-title">
     <div class="finder-art" aria-hidden="true">
-      <img class="bubble" id="bubble" src="site/design/hb-find-ja.png" alt="">
-      <img class="kaachan" src="site/design/hb-kaachan.png" alt="">
+      <div class="kc-wrap">
+        <img class="bubble" id="bubble" src="site/design/hb-find-ja.png" alt="">
+        <img class="kaachan" src="site/design/hb-kaachan.png" alt="">
+      </div>
     </div>
     <div class="finder-main">
       <h1 id="finder-title"></h1>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>お知らせ | 金沢市 食のバリアフリーマップ</title>
+<link rel="icon" href="site/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="site.css">
+<script src="site.js"></script>
+<style>
+.pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 24px; }
+.pager a, .pager span {
+  min-width: 40px; height: 40px; padding: 0 12px; display: inline-grid; place-items: center;
+  border: 1.5px solid var(--line); border-radius: 999px; background: var(--white);
+  font-weight: 700; text-decoration: none; color: var(--ink);
+}
+.pager span[aria-current] { background: var(--camellia); border-color: var(--camellia); color: var(--white); }
+.pager span.off { opacity: .35; }
+
+/* ---------- 記事 ---------- */
+.article { background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 28px 32px 32px; }
+.article h1 { font-size: 1.45rem; line-height: 1.5; margin: 0; }
+.article time { display: block; color: var(--ink-soft); font-size: .9rem; margin: 6px 0 22px; padding-bottom: 16px; border-bottom: 1.5px dashed var(--line); }
+.article .note { background: var(--camellia-soft); border-radius: 6px; padding: 8px 12px; font-size: .9rem; margin: 0 0 18px; }
+.body p { margin: 0 0 .9em; overflow-wrap: anywhere; }
+.body figure { margin: 6px 0 18px; }
+.body figure img { max-height: 640px; width: auto; border-radius: 4px; }
+.back { margin-top: 26px; }
+
+@media (max-width: 760px) {
+  .article { padding: 20px 16px 24px; }
+  .article h1 { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap narrow" style="margin:0 auto;width:100%">
+  <div id="view"><div class="state" id="state"></div></div>
+</main>
+<div id="site-footer"></div>
+
+<script>
+(() => {
+  const { LANG, params, esc, href, loadCSV, linkify, formatDate, sortNews, CONFIG } = KF;
+  const T = {
+    ja: {
+      title: "お知らせ", siteName: "金沢市 食のバリアフリーマップ",
+      loading: "読み込んでいます…",
+      fail: "お知らせを読み込めませんでした。通信状況を確かめて、ページを再読み込みしてください。",
+      notFound: "このお知らせは見つかりませんでした。",
+      back: "お知らせ一覧へ戻る", prev: "前へ", next: "次へ", jaOnly: "",
+    },
+    en: {
+      title: "News", siteName: "Kanazawa Food Barrier-Free Map",
+      loading: "Loading…",
+      fail: "Couldn’t load the news. Check your connection and reload the page.",
+      notFound: "This news item could not be found.",
+      back: "Back to all news", prev: "Previous", next: "Next",
+      jaOnly: "This news item is available in Japanese only.",
+    },
+  }[LANG];
+  const view = document.getElementById("view");
+  document.getElementById("state").textContent = T.loading;
+
+  loadCSV(CONFIG.NEWS_CSV_URL)
+    .then(rows => {
+      const news = sortNews(rows);
+      const id = params.get("id");
+      if (id) showArticle(news.find(n => String(n.news_id) === String(id)));
+      else showList(news, Number(params.get("page")) || 1);
+    })
+    .catch(() => { view.innerHTML = `<div class="state">${esc(T.fail)}</div>`; });
+
+  function showList(news, page) {
+    document.title = `${T.title} | ${T.siteName}`;
+    const per = CONFIG.NEWS_PAGE_SIZE;
+    const pages = Math.max(1, Math.ceil(news.length / per));
+    page = Math.min(Math.max(1, page), pages);
+    const shown = news.slice((page - 1) * per, page * per);
+    const nums = Array.from({ length: pages }, (_, i) => i + 1);
+    const link = (p, label, extra = "") => `<a href="${href("news.html", { page: p > 1 ? p : "" })}"${extra}>${label}</a>`;
+    view.innerHTML = `
+      <h1 class="sec-title">${esc(T.title)}</h1>
+      <ul class="news-list">${shown.map(n => {
+        const title = (LANG === "en" && n.title_en) || n.title_ja;
+        return `<li><a class="news-row" href="${href("news.html", { id: n.news_id })}">
+          <span class="txt"><span class="ttl">${esc(title)}</span><time datetime="${esc(n.date)}">${esc(formatDate(n.date))}</time></span>
+          ${n.thumb ? `<img class="thumb" src="news/${esc(n.thumb)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+        </a></li>`;
+      }).join("")}</ul>
+      ${pages > 1 ? `<nav class="pager" aria-label="${esc(T.title)}">
+        ${page > 1 ? link(page - 1, esc(T.prev)) : `<span class="off">${esc(T.prev)}</span>`}
+        ${nums.map(n => n === page ? `<span aria-current="page">${n}</span>` : link(n, n)).join("")}
+        ${page < pages ? link(page + 1, esc(T.next)) : `<span class="off">${esc(T.next)}</span>`}
+      </nav>` : ""}`;
+  }
+
+  function showArticle(n) {
+    if (!n) {
+      view.innerHTML = `<div class="state"><strong>${esc(T.notFound)}</strong></div>
+        <p class="back" style="text-align:center"><a class="btn" href="${href("news.html")}">${esc(T.back)}</a></p>`;
+      return;
+    }
+    const useEn = LANG === "en" && n.title_en;
+    const title = useEn ? n.title_en : n.title_ja;
+    const body = (useEn && n.body_en) ? n.body_en : n.body_ja;
+    document.title = `${title} | ${T.siteName}`;
+    const imgs = (n.images || "").split(",").map(s => s.trim()).filter(Boolean);
+    const used = new Set();
+    const figure = i => imgs[i] ? `<figure><img src="news/${esc(imgs[i])}" alt="" loading="lazy"></figure>` : "";
+
+    // 本文: 1 行を 1 段落に。[写真1] などだけの行は、その位置に写真を出す
+    const html = (body || "").split(/\r?\n/).map(line => {
+      const m = /^\s*\[(?:写真|photo)\s*(\d+)\]\s*$/i.exec(line);
+      if (m) { const i = Number(m[1]) - 1; used.add(i); return figure(i); }
+      return line.trim() ? `<p>${linkify(line)}</p>` : "";
+    }).join("");
+    const rest = imgs.map((_, i) => used.has(i) ? "" : figure(i)).join(""); // 本文で使わなかった写真は最後にまとめて
+
+    view.innerHTML = `
+      <article class="article">
+        <h1>${esc(title)}</h1>
+        <time datetime="${esc(n.date)}">${esc(formatDate(n.date))}</time>
+        ${LANG === "en" && !useEn ? `<p class="note">${esc(T.jaOnly)}</p>` : ""}
+        <div class="body" lang="${useEn ? "en" : "ja"}">${html}${rest}</div>
+      </article>
+      <p class="back" style="text-align:center"><a class="btn" href="${href("news.html")}">${esc(T.back)}</a></p>`;
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+/* 金沢市 食のバリアフリーマップ 共通スタイル */
+:root {
+  --paper: #fbf8f1;
+  --ink: #4a3b32;
+  --ink-soft: #7a6a5e;
+  --line: #e6ddd0;
+  --camellia: #e0707a;
+  --camellia-soft: #fbe5e6;
+  --teal: #3d9fa8;
+  --sky: #3fa7c4;
+  --sky-dark: #2f8ea9;
+  --wood: #5b4637;
+  --white: #ffffff;
+  --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--paper) url("site/design/hemp-pat.png");
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+main { flex: 1; }
+img { max-width: 100%; display: block; }
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 20px 56px; }
+.narrow { max-width: 820px; }
+
+/* ---------- ヘッダー ---------- */
+.g-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  max-width: 1120px; margin: 0 auto; width: 100%;
+  padding: 14px 20px;
+}
+.g-brand img { height: 40px; width: auto; }
+.g-lang, .hero-lang {
+  font-weight: 700; font-size: .9rem; text-decoration: none; color: var(--ink);
+  border: 1.5px solid var(--line); background: var(--white);
+  border-radius: 999px; padding: 4px 14px;
+}
+
+/* ---------- フッター ---------- */
+.g-ft {
+  margin-top: 40px;
+  background: var(--wood) url("site/design/shop-name-bg.png");
+  color: var(--white);
+  padding: 28px 20px 36px;
+  text-align: center;
+}
+.ft-brand { font-weight: 700; letter-spacing: .04em; }
+.ft-nav { list-style: none; margin: 10px 0 0; padding: 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 22px; }
+.ft-nav a { color: var(--white); text-decoration: none; font-size: .92rem; opacity: .92; }
+.ft-nav a:hover { text-decoration: underline; opacity: 1; }
+
+/* ---------- 見出しとボタン ---------- */
+.sec-title {
+  text-align: center; font-size: 1.5rem; font-weight: 700; letter-spacing: .08em;
+  margin: 0 0 22px;
+}
+.sec-title::after {
+  content: ""; display: block; width: 48px; height: 3px; border-radius: 3px;
+  background: var(--camellia); margin: 8px auto 0;
+}
+.btn {
+  display: inline-block; padding: 10px 34px; border-radius: 999px;
+  background: var(--sky); color: var(--white); font-weight: 700; text-decoration: none;
+  box-shadow: 0 4px 0 var(--sky-dark);
+}
+.btn:hover { background: var(--sky-dark); }
+.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--sky-dark); }
+.btn.secondary { background: var(--white); color: var(--ink); border: 1.5px solid var(--line); box-shadow: 0 3px 0 var(--line); }
+.btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-top: 22px; }
+
+/* ---------- お知らせの行（トップと一覧で共通） ---------- */
+.news-list { list-style: none; margin: 0; padding: 0; background: var(--white); border-radius: 8px; border: 1px solid var(--line); }
+.news-list li + li { border-top: 1px dashed var(--line); }
+.news-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 18px; color: var(--ink); text-decoration: none;
+}
+.news-row:hover { background: #fdfaf4; }
+.news-row .txt { flex: 1; min-width: 0; }
+.news-row .ttl { font-weight: 700; line-height: 1.5; }
+.news-row:hover .ttl { color: var(--teal); }
+.news-row time { display: block; font-size: .82rem; color: var(--ink-soft); margin-top: 2px; }
+.news-row .thumb { width: 90px; height: 60px; flex: none; border-radius: 4px; object-fit: cover; background: #efe8dc; }
+
+.state { padding: 40px 12px; text-align: center; color: var(--ink-soft); }
+.state strong { display: block; color: var(--ink); font-size: 1.1rem; margin-bottom: 6px; }
+
+@media (max-width: 760px) {
+  .wrap { padding: 16px 14px 40px; }
+  .g-hd { padding: 10px 14px; }
+  .g-brand img { height: 30px; }
+  .news-row { padding: 12px 14px; gap: 12px; }
+  .news-row .thumb { width: 72px; height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

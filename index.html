@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金沢市 食のバリアフリーマップ</title>
+<meta name="description" content="金沢市内で食物アレルギーやベジタリアン、ヴィーガンについての対応・事前相談が可能なお店を探せるマップです。">
+<meta property="og:image" content="site/ogp-ja.jpg">
+<link rel="icon" href="site/favicon.png">
+<link rel="apple-touch-icon" href="site/appicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="site.css">
+<script src="site.js"></script>
+<style>
+/* ---------- タイトル ---------- */
+.hero {
+  position: relative;
+  background: #fbe9d6 url("site/design/hb-bg.jpg") center / cover no-repeat;
+  padding: 36px 20px 40px;
+}
+.hero-title { width: min(400px, 78vw); margin: 0 auto; }
+.hero-lang { position: absolute; top: 14px; right: 16px; }
+.hero-iine { position: absolute; right: 16px; bottom: 14px; width: 92px; }
+
+.lead {
+  max-width: 760px; margin: 28px auto 0; padding: 0 20px;
+  text-align: center; font-size: 1.02rem;
+}
+
+/* ---------- お店を探す ---------- */
+.find { position: relative; }
+.icons {
+  list-style: none; margin: 0 auto; padding: 0; max-width: 760px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.icon {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 10px 4px 12px; border-radius: 18px;
+  color: var(--ink); text-decoration: none; transition: background-color .15s;
+}
+.icon:hover { background: rgba(255,255,255,.7); }
+.icon img { width: 116px; height: 116px; transition: transform .2s; }
+.icon:hover img { transform: translateY(-3px); }
+.icon span { font-weight: 700; font-size: .98rem; text-align: center; line-height: 1.45; }
+.find-art { position: absolute; left: 0; top: 0; width: 150px; pointer-events: none; }
+.find-art .bubble { width: 150px; }
+.find-art .kaachan { width: 112px; margin: -10px 0 0 40px; }
+
+section.block { margin-top: 48px; }
+
+/* ---------- バナーと SNS ---------- */
+.banners { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; }
+.banners a { display: block; width: min(320px, 100%); border-radius: 6px; overflow: hidden; box-shadow: 0 4px 14px -8px rgba(74,59,50,.5); }
+.sns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.sns-box { background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-height: 120px; }
+.sns-box .fallback { display: block; text-align: center; padding: 30px 0; }
+
+@media (max-width: 1060px) { .find-art { display: none; } }
+@media (max-width: 760px) {
+  .hero { padding: 48px 14px 30px; }
+  .hero-iine { width: 64px; }
+  .icons { gap: 2px; }
+  .icon { padding: 6px 2px 8px; gap: 6px; }
+  .icon img { width: 70px; height: 70px; }
+  .icon span { font-size: .78rem; }
+  .sns { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1 style="margin:0"><img class="hero-title" id="hero-title" src="site/hb-title-ja.png" alt="金沢市 食のバリアフリーマップ"></h1>
+  <a class="hero-lang" id="hero-lang" href="#">English</a>
+  <img class="hero-iine" src="site/iine-kanazawa.png" alt="いいね金沢">
+</header>
+
+<main>
+  <p class="lead" id="lead"></p>
+
+  <div class="wrap">
+    <section class="block find" aria-labelledby="t-find">
+      <div class="find-art" aria-hidden="true">
+        <img class="bubble" id="bubble" src="site/design/hb-find-ja.png" alt="">
+        <img class="kaachan" src="site/design/hb-kaachan.png" alt="">
+      </div>
+      <h2 class="sec-title" id="t-find"></h2>
+      <ul class="icons" id="icons"></ul>
+      <div class="btns">
+        <a class="btn" id="btn-search" href="search.html"></a>
+        <a class="btn secondary" id="btn-map" href="search.html?view=map"></a>
+      </div>
+    </section>
+
+    <section class="block narrow" style="margin-left:auto;margin-right:auto" aria-labelledby="t-news">
+      <h2 class="sec-title" id="t-news"></h2>
+      <ul class="news-list" id="news"><li class="state" id="news-state"></li></ul>
+      <div class="btns"><a class="btn" id="btn-news" href="news.html"></a></div>
+    </section>
+
+    <section class="block" aria-label="バナー">
+      <div class="banners">
+        <a href="https://www.kanazawa-kankoukyoukai.or.jp/" target="_blank" rel="noopener"><img src="site/banner_01_kanazawa-kankoukyoukai.jpg" alt="金沢旅物語（金沢市観光公式サイト）"></a>
+        <a href="https://happymama-ishikawa.com/" target="_blank" rel="noopener"><img src="site/banner_02_happymama-ishikawa.jpg" alt="はっぴーママいしかわ"></a>
+      </div>
+    </section>
+
+    <section class="block sns" aria-label="SNS">
+      <div class="sns-box">
+        <a class="twitter-timeline" data-height="520" data-lang="ja" href="https://twitter.com/in55412968">
+          <span class="fallback">X（旧 Twitter）@in55412968</span>
+        </a>
+      </div>
+      <div class="sns-box">
+        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/C5LPg_luYOB/" data-instgrm-version="14" style="margin:0;width:100%;min-width:0;border:0">
+          <a class="fallback" href="https://www.instagram.com/p/C5LPg_luYOB/" target="_blank" rel="noopener">Instagram @lumiere.ishikawa</a>
+        </blockquote>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script>
+(() => {
+  const { LANG, esc, href, langSwitchHref, loadCSV, formatDate, sortNews, CONFIG } = KF;
+  const T = {
+    ja: {
+      lead: "このサイトに掲載されているお店は、金沢市内で食物アレルギーやベジタリアン、ヴィーガンについての対応・事前相談が可能なお店です。",
+      find: "お店を探す", search: "詳しい条件で探す", map: "地図で探す",
+      news: "お知らせ", newsAll: "お知らせ一覧",
+      loading: "読み込んでいます…", fail: "お知らせを読み込めませんでした。",
+      other: "English",
+    },
+    en: {
+      lead: "Please feel free to contact each establishment listed on this website with inquiries about possible food allergies, vegetarians and vegans.",
+      find: "Find Restaurant", search: "Advanced Search", map: "Search on the map",
+      news: "News", newsAll: "All news",
+      loading: "Loading…", fail: "Couldn’t load the news.",
+      other: "日本語",
+    },
+  }[LANG];
+  const ICONS = [
+    { f: 1, icon: "site/icon_egg_milk_free.png", ja: "卵・乳なしの<br>メニューあり", en: "Egg/dairy<br>free" },
+    { f: 2, icon: "site/icon_wheat_free.png",    ja: "小麦なしの<br>メニューあり",   en: "Wheat<br>free" },
+    { f: 3, icon: "site/icon_vegetarian.png",    ja: "ベジタリアン<br>対応",          en: "Vegetarian" },
+    { f: 4, icon: "site/icon_vegan.png",         ja: "ヴィーガン<br>対応",            en: "Vegan" },
+  ];
+
+  if (LANG === "en") {
+    document.title = "Find Allergy-friendly/Vegan Restaurants in Kanazawa";
+    const t = document.getElementById("hero-title");
+    t.src = "site/hb-title-en.png"; t.alt = "Find Allergy-friendly/Vegan Restaurants in Kanazawa";
+    document.getElementById("bubble").src = "site/design/hb-find-en.png";
+    document.querySelector(".twitter-timeline").dataset.lang = "en";
+  }
+  const lang = document.getElementById("hero-lang");
+  lang.textContent = T.other; lang.href = langSwitchHref();
+  document.getElementById("lead").textContent = T.lead;
+  document.getElementById("t-find").textContent = T.find;
+  document.getElementById("t-news").textContent = T.news;
+  const set = (id, text, url) => { const a = document.getElementById(id); a.textContent = text; a.href = url; };
+  set("btn-search", T.search, href("search.html"));
+  set("btn-map", T.map, href("search.html", { view: "map" }));
+  set("btn-news", T.newsAll, href("news.html"));
+  document.getElementById("icons").innerHTML = ICONS.map(i =>
+    `<li><a class="icon" href="${href("search.html", { f: i.f })}"><img src="${i.icon}" alt=""><span>${i[LANG]}</span></a></li>`).join("");
+
+  // 最新のお知らせ 3 件
+  const box = document.getElementById("news");
+  document.getElementById("news-state").textContent = T.loading;
+  loadCSV(CONFIG.NEWS_CSV_URL)
+    .then(rows => {
+      const list = sortNews(rows).slice(0, 3);
+      box.innerHTML = list.map(n => {
+        const title = (LANG === "en" && n.title_en) || n.title_ja;
+        return `<li><a class="news-row" href="${href("news.html", { id: n.news_id })}">
+          <span class="txt"><span class="ttl">${esc(title)}</span><time datetime="${esc(n.date)}">${esc(formatDate(n.date))}</time></span>
+          ${n.thumb ? `<img class="thumb" src="news/${esc(n.thumb)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+        </a></li>`;
+      }).join("");
+    })
+    .catch(() => { document.getElementById("news-state").textContent = T.fail; });
+
+  // SNS の埋め込み（読み込めないときはリンクのまま表示される）
+  for (const src of ["https://platform.twitter.com/widgets.js", "https://www.instagram.com/embed.js"]) {
+    const s = document.createElement("script"); s.async = true; s.src = src; document.body.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>

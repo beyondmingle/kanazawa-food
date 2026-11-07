@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>運営者情報 | 金沢市 食のバリアフリーマップ</title>
+<link rel="icon" href="site/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="site.css">
+<script src="site.js"></script>
+<style>
+.about { background: var(--white); border: 1px solid var(--line); border-radius: 8px; padding: 28px 32px 32px; }
+.figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 24px; }
+.figs.one { grid-template-columns: 1fr; }
+figure { margin: 0; }
+figure img { border-radius: 4px; width: 100%; }
+figcaption { font-size: .88rem; color: var(--ink-soft); text-align: center; margin-top: 6px; }
+.about p { margin: 0 0 1em; }
+[data-lang] { display: none; }
+html[lang="ja"] [data-lang="ja"], html[lang="en"] [data-lang="en"] { display: block; }
+@media (max-width: 760px) {
+  .about { padding: 20px 16px 24px; }
+  .figs { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap narrow" style="margin:0 auto;width:100%">
+  <h1 class="sec-title">About us</h1>
+
+  <!-- 日本語 -->
+  <div class="about" data-lang="ja">
+    <div class="figs">
+      <figure><img src="site/about_ja_01.jpg" alt="紙のマップ（日本語版）"><figcaption>日本語版</figcaption></figure>
+      <figure><img src="site/about_ja_02.jpg" alt="2021年5月20日に開催したイベント"><figcaption>2021年5月20日開催</figcaption></figure>
+    </div>
+    <p>私たちは、誰もが安心して食を楽しめる社会を目指す市民団体「るみえ~る」です。</p>
+    <p>このWEBサイトは2018年4月、A3判の紙マップを基にスタートしました。食物アレルギーのある方やベジタリアン・ヴィーガンの方、誰もが真に安全・安心な食を楽しめる社会になるよう、食のバリアフリーを目指して、活動を始めました。2021年5月20日にはコロナ禍に対応したオンラインイベントも実施します。協賛してくださるお店の方、宿泊施設の方のおかげで、このサイトは成り立っています。ご協力いただける方からのメッセージを歓迎しています。お気軽にメールをお待ちしております。</p>
+    <p><a href="mailto:lumiere.ishikawa@gmail.com">lumiere.ishikawa@gmail.com</a></p>
+  </div>
+
+  <!-- English -->
+  <div class="about" data-lang="en">
+    <div class="figs one">
+      <figure><img src="site/about_en_01.jpg" alt="About us"></figure>
+    </div>
+    <p>Contact: <a href="mailto:lumiere.ishikawa@gmail.com">lumiere.ishikawa@gmail.com</a></p>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script>
+  if (KF.LANG === "en") document.title = "About us | Kanazawa Food Barrier-Free Map";
+</script>
+</body>
+</html>

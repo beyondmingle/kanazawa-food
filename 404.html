@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ページが見つかりません | 金沢市 食のバリアフリーマップ</title>
+<script>
+/* 旧サイト（kanazawa-food.jp）の URL で来た人を、新しいページへ案内する。
+   例: /search/?f=1 → search.html?f=1、/shops/10/ → search.html?shop=10、/news/62/ → news.html?id=62 */
+(() => {
+  const parts = location.pathname.split("/").filter(Boolean);
+  // github.io で公開しているときは、先頭の「リポジトリ名」の部分を土台として残す
+  const base = location.hostname.endsWith("github.io") && parts.length ? "/" + parts.shift() + "/" : "/";
+  const q = new URLSearchParams(location.search);
+  if (parts[0] === "en") { parts.shift(); q.set("lang", "en"); }
+  const [a, b] = parts;
+  let page = null;
+  if (!a) page = "index.html";
+  else if (a === "search") page = "search.html";
+  else if (a === "shops" && /^\d+$/.test(b || "")) { page = "search.html"; q.set("shop", b); }
+  else if (a === "shops") page = "search.html";
+  else if (a === "news" && /^\d+$/.test(b || "")) { page = "news.html"; q.set("id", b); }
+  else if (a === "news") page = "news.html";
+  else if (a === "about") page = "about.html";
+  if (page) {
+    const s = q.toString();
+    location.replace(base + page + (s ? "?" + s : ""));
+  } else {
+    document.addEventListener("DOMContentLoaded", () => { document.getElementById("home").href = base; });
+  }
+})();
+</script>
+<style>
+body { font-family: "Hiragino Maru Gothic ProN", "Noto Sans JP", sans-serif; color: #4a3b32; background: #fbf8f1; text-align: center; padding: 80px 20px; }
+a { color: #3d9fa8; }
+</style>
+</head>
+<body>
+<p>お探しのページは見つかりませんでした。<br>The page you were looking for could not be found.</p>
+<p><a id="home" href="/">トップページへ / Home</a></p>
+</body>
+</html>

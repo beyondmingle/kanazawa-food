@@ -10,14 +10,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="site.css">
+<script src="site.js"></script>
 <script>
-/* ============================================================
-   設定（ここだけ書き換える）
-   CSV_URL: スプレッドシートの public シートを「ウェブに公開」した CSV の URL
-   ============================================================ */
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vThJRjCp8JlplPg2mhxV8q5BX23rqKfzHQjTR9ifDtTND8GU3pAn6VUJFCG-sh5dtlwdP9QI_CBckJz/pub?gid=747522636&single=true&output=csv";
-// 1 ページに表示するお店の数
-const PAGE_SIZE = 20;
+// 設定は site.js にまとめてある
+const CSV_URL = KF_CONFIG.SHOPS_CSV_URL;
+const PAGE_SIZE = KF_CONFIG.PAGE_SIZE;
 </script>
 <style>
 :root {
@@ -227,6 +225,10 @@ button, input, select { font: inherit; color: inherit; }
 }
 .gmap { width: 100%; height: 260px; border: 0; border-radius: 8px; margin-top: 18px; display: block; background: #efe8dc; }
 
+/* ---------- 協賛バナー ---------- */
+.related { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin-top: 40px; }
+.related a { display: block; width: min(320px, 100%); border-radius: 6px; overflow: hidden; }
+
 /* ---------- ページ送り ---------- */
 .pager {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px;
@@ -326,6 +328,8 @@ a { color: var(--teal); }
 </style>
 </head>
 <body>
+<div id="site-header"></div>
+<main style="width:100%">
 <div class="wrap">
   <section class="finder" aria-labelledby="finder-title">
     <div class="finder-art" aria-hidden="true">
@@ -365,7 +369,14 @@ a { color: var(--teal); }
   <nav class="pager" id="pager" hidden></nav>
   <div class="map" id="map" hidden></div>
   <div class="state" id="state"></div>
+
+  <aside class="related" aria-label="協賛">
+    <a href="https://www.100bangai.co.jp/" target="_blank" rel="noopener"><img src="site/related_r38.jpg" alt="金沢百番街" loading="lazy"></a>
+    <a href="https://www.100bangai.co.jp/" target="_blank" rel="noopener"><img src="site/promo_pr2.jpg" alt="金沢百番街" loading="lazy"></a>
+  </aside>
 </div>
+</main>
+<div id="site-footer"></div>
 
 <dialog id="detail" aria-labelledby="d-name"></dialog>
 
@@ -784,6 +795,10 @@ a { color: var(--teal); }
         $("area").value = state.area;
       }
       render();
+      // ?shop=10 で開いたときは、そのお店の詳細を最初から開く（旧サイトの店舗ページからの転送もこれ）
+      const sid = params.get("shop");
+      const target = sid && shops.find(s => s.shop_id === sid);
+      if (target) openDetail(target, null);
     })
     .catch(() => showState(T.failTitle, T.failBody));
 })();

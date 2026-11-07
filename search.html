@@ -437,11 +437,50 @@ a { color: var(--teal); }
   });
 
   // URL の #egg_milk_free,wheat_free のような指定で、最初から絞り込む
-  const readHash = () => {
-    state.on = new Set(decodeURIComponent(location.hash.slice(1)).split(",").filter(k => ALL_KEYS.includes(k)));
-  };
-  readHash();
-  window.addEventListener("hashchange", () => { readHash(); state.page = 1; render(); });
+  // ---------- 最初の絞り込み条件 ----------
+  // 次の 3 通りで指定できる（上ほど優先）。
+  //  1. ホームのアイコン（home-icons.html）から引き継いだ条件
+  //  2. URL の引数: ?f=1（元サイトと同じ番号。1 卵・乳なし / 2 小麦なし / 3 ベジタリアン / 4 ヴィーガン、
+  //     ?f=1,4 で組み合わせ）、?c=egg_milk_free,has_parking（条件名）、?area=金沢市中心部、?q=カレー
+  //  3. URL の # : #egg_milk_free,vegan
+  // 画面を操作したあとの URL には、最初の条件の引数を残さない（言語などの設定だけ残す）
+  const KEEP_SEARCH = (() => {
+    const k = new URLSearchParams();
+    ["lang", "csv", "v"].forEach(n => params.has(n) && k.set(n, params.get(n)));
+    const q = k.toString();
+    return q ? "?" + q : "";
+  })();
+  const F_NUM = { 1: "egg_milk_free", 2: "wheat_free", 3: "vegetarian", 4: "vegan" };
+  const toKeys = list => list.map(v => F_NUM[v.trim()] || v.trim()).filter(k => ALL_KEYS.includes(k));
+  const split = v => (v || "").split(",").filter(Boolean);
+  const HANDOFF_KEY = "kanazawa-food:initial";
+  let pendingArea = "";
+
+  function readHandoff() {
+    try {
+      const raw = localStorage.getItem(HANDOFF_KEY);
+      if (!raw) return null;
+      localStorage.removeItem(HANDOFF_KEY);
+      const h = JSON.parse(raw);
+      return Date.now() - (h.t || 0) < 2 * 60 * 1000 ? h : null; // 2 分以内に押されたものだけ使う
+    } catch (e) { return null; }
+  }
+  const readHash = () => toKeys(split(decodeURIComponent(location.hash.slice(1))));
+
+  const handoff = readHandoff();
+  if (handoff) {
+    state.on = new Set(toKeys(split(String(handoff.f || ""))));
+    pendingArea = handoff.area || "";
+    state.q = (handoff.q || "").toLowerCase();
+  } else if (params.has("f") || params.has("c") || params.has("area") || params.has("q")) {
+    state.on = new Set([...toKeys(split(params.get("f"))), ...toKeys(split(params.get("c")))]);
+    pendingArea = params.get("area") || "";
+    state.q = (params.get("q") || "").trim().toLowerCase();
+  } else {
+    state.on = new Set(readHash());
+  }
+  if (state.q) $("q").value = state.q;
+  window.addEventListener("hashchange", () => { state.on = new Set(readHash()); state.page = 1; render(); });
 
   // ---------- CSV ----------
   function parseCSV(text) {
@@ -491,7 +530,7 @@ a { color: var(--teal); }
     $("big-filters").classList.toggle("some-big", BIG.some(f => state.on.has(f.key)));
     $("clear").hidden = !(state.on.size || state.area || state.q);
     const h = [...state.on].join(",");
-    history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
+    history.replaceState(null, "", location.pathname + KEEP_SEARCH + (h ? "#" + h : ""));
 
     if (!shops.length) return;
     const list = shops.filter(matches);
@@ -607,6 +646,10 @@ a { color: var(--teal); }
       const areas = [...new Map(shops.filter(s => s.area_ja).map(s => [s.area_ja, L(s, "area")])).entries()];
       $("area").innerHTML = `<option value="">${esc(T.allAreas)}</option>` +
         areas.map(([ja, label]) => `<option value="${esc(ja)}">${esc(label)}</option>`).join("");
+      if (pendingArea && areas.some(([ja, label]) => ja === pendingArea || label === pendingArea)) {
+        state.area = areas.find(([ja, label]) => ja === pendingArea || label === pendingArea)[0];
+        $("area").value = state.area;
+      }
       render();
     })
     .catch(() => showState(T.failTitle, T.failBody));

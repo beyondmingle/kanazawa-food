@@ -1,0 +1,6 @@
+# GitHub Pages（Jekyll）の設定
+# ここに書いたファイルは、サイトとしては公開されない（リポジトリには残る）
+exclude:
+  - CLAUDE.md
+  - README.md
+  - news.csv

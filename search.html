@@ -14,6 +14,8 @@
    CSV_URL: スプレッドシートの public シートを「ウェブに公開」した CSV の URL
    ============================================================ */
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vThJRjCp8JlplPg2mhxV8q5BX23rqKfzHQjTR9ifDtTND8GU3pAn6VUJFCG-sh5dtlwdP9QI_CBckJz/pub?gid=747522636&single=true&output=csv";
+// 1 ページに表示するお店の数
+const PAGE_SIZE = 20;
 </script>
 <style>
 :root {
@@ -185,6 +187,22 @@ button, input, select { font: inherit; color: inherit; }
   padding: 0 8px; margin-right: 6px;
 }
 
+/* ---------- ページ送り ---------- */
+.pager {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px;
+  margin: 28px 0 0;
+}
+.pager[hidden] { display: none; }
+.pager button {
+  min-width: 40px; height: 40px; padding: 0 12px;
+  border: 1.5px solid var(--line); border-radius: 999px;
+  background: var(--white); cursor: pointer; font-weight: 700;
+}
+.pager button[aria-current="page"] { background: var(--camellia); border-color: var(--camellia); color: var(--white); cursor: default; }
+.pager button:disabled { opacity: .35; cursor: default; }
+.pager .step { padding: 0 16px; }
+.range { font-size: .9rem; color: var(--ink-soft); }
+
 .state { padding: 48px 12px; text-align: center; color: var(--ink-soft); }
 .state strong { display: block; color: var(--ink); font-size: 1.1rem; margin-bottom: 6px; }
 
@@ -286,10 +304,12 @@ a { color: var(--teal); }
 
   <div class="result-bar">
     <p class="count" id="count" aria-live="polite" style="margin:0"></p>
+    <span class="range" id="range"></span>
     <button class="clear" id="clear" type="button" hidden></button>
   </div>
 
   <ul class="tiles" id="tiles"></ul>
+  <nav class="pager" id="pager" hidden></nav>
   <div class="state" id="state"></div>
 </div>
 
@@ -312,6 +332,10 @@ a { color: var(--teal); }
       q: "店名・メニューで探す",
       count: n => `<strong>${n}</strong>件のお店`,
       clear: "条件をすべて外す",
+      range: (a, b) => `${a}〜${b}件目を表示`,
+      prev: "前へ", next: "次へ",
+      pagerLabel: "ページ送り",
+      pageN: n => `${n}ページ目`,
       loading: "お店の情報を読み込んでいます…",
       failTitle: "お店の情報を読み込めませんでした",
       failBody: "通信状況を確かめて、ページを再読み込みしてください。",
@@ -336,6 +360,10 @@ a { color: var(--teal); }
       q: "Search by name or menu",
       count: n => `<strong>${n}</strong> ${n === 1 ? "place" : "places"}`,
       clear: "Clear all conditions",
+      range: (a, b) => `Showing ${a}–${b}`,
+      prev: "Previous", next: "Next",
+      pagerLabel: "Pages",
+      pageN: n => `Page ${n}`,
       loading: "Loading restaurants…",
       failTitle: "Couldn’t load the restaurant list",
       failBody: "Check your connection and reload the page.",
@@ -374,7 +402,7 @@ a { color: var(--teal); }
   const L = (row, base) => (LANG === "en" && row[base + "_en"]) ? row[base + "_en"] : (row[base + "_ja"] || "");
   const yes = v => String(v).trim().toUpperCase() === "TRUE";
 
-  const state = { on: new Set(), area: "", q: "" };
+  const state = { on: new Set(), area: "", q: "", page: 1 };
   let shops = [];
 
   // ---------- 文言とフィルタ UI ----------
@@ -401,12 +429,13 @@ a { color: var(--teal); }
     if (!b) return;
     const k = b.dataset.key;
     state.on.has(k) ? state.on.delete(k) : state.on.add(k);
+    state.page = 1;
     render();
   });
-  $("area").addEventListener("change", e => { state.area = e.target.value; render(); });
-  $("q").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); render(); });
+  $("area").addEventListener("change", e => { state.area = e.target.value; state.page = 1; render(); });
+  $("q").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); state.page = 1; render(); });
   $("clear").addEventListener("click", () => {
-    state.on.clear(); state.area = ""; state.q = "";
+    state.on.clear(); state.area = ""; state.q = ""; state.page = 1;
     $("area").value = ""; $("q").value = "";
     render();
   });
@@ -416,7 +445,7 @@ a { color: var(--teal); }
     state.on = new Set(decodeURIComponent(location.hash.slice(1)).split(",").filter(k => ALL_KEYS.includes(k)));
   };
   readHash();
-  window.addEventListener("hashchange", () => { readHash(); render(); });
+  window.addEventListener("hashchange", () => { readHash(); state.page = 1; render(); });
 
   // ---------- CSV ----------
   function parseCSV(text) {
@@ -471,9 +500,15 @@ a { color: var(--teal); }
     if (!shops.length) return;
     const list = shops.filter(matches);
     $("count").innerHTML = T.count(list.length);
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    state.page = Math.min(Math.max(1, state.page), pages);
+    const from = (state.page - 1) * PAGE_SIZE;
+    const shown = list.slice(from, from + PAGE_SIZE);
+    $("range").textContent = list.length > PAGE_SIZE ? T.range(from + 1, from + shown.length) : "";
+    renderPager(pages);
     if (!list.length) { showState(T.emptyTitle, T.emptyBody); return; }
     $("state").innerHTML = "";
-    $("tiles").innerHTML = list.map(s => {
+    $("tiles").innerHTML = shown.map(s => {
       const name = L(s, "name"), img = images(s)[0];
       return `<li><button class="tile" type="button" data-id="${esc(s.shop_id)}">
         <div class="photo">${img ? `<img loading="lazy" src="shops/${esc(img)}" alt="${esc(T.photoOf(name))}" onerror="this.remove()">` : ""}</div>
@@ -486,6 +521,27 @@ a { color: var(--teal); }
       </button></li>`;
     }).join("");
   }
+
+  function renderPager(pages) {
+    const pg = $("pager");
+    pg.hidden = pages <= 1;
+    pg.setAttribute("aria-label", T.pagerLabel);
+    if (pages <= 1) { pg.innerHTML = ""; return; }
+    const nums = [];
+    for (let i = 1; i <= pages; i++) nums.push(i);
+    pg.innerHTML =
+      `<button type="button" class="step" data-page="${state.page - 1}" ${state.page === 1 ? "disabled" : ""}>${esc(T.prev)}</button>` +
+      nums.map(n => `<button type="button" data-page="${n}" aria-label="${esc(T.pageN(n))}" ${n === state.page ? 'aria-current="page"' : ""}>${n}</button>`).join("") +
+      `<button type="button" class="step" data-page="${state.page + 1}" ${state.page === pages ? "disabled" : ""}>${esc(T.next)}</button>`;
+  }
+  $("pager").addEventListener("click", e => {
+    const b = e.target.closest("button[data-page]");
+    if (!b || b.disabled || b.getAttribute("aria-current")) return;
+    state.page = Number(b.dataset.page);
+    render();
+    // 一覧の先頭（件数の行）が見える位置まで戻す
+    document.querySelector(".result-bar").scrollIntoView({ block: "start", behavior: "smooth" });
+  });
 
   $("tiles").addEventListener("click", e => {
     const t = e.target.closest(".tile");

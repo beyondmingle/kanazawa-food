@@ -23,7 +23,7 @@ const SEARCH_PAGE_URL_EN = "https://sites.google.com/view/kanazawa-food/search-e
   --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: transparent; }
+html, body { margin: 0; background: transparent; overflow: hidden; } /* 枠の中にスクロールバーを出さない */
 body { font-family: var(--font); color: var(--ink); line-height: 1.5; padding: 8px 8px 16px; }
 :focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
 

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>お店を探す | 金沢市 食のバリアフリーマップ</title>
+<link rel="icon" href="site/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<script>
+/* ============================================================
+   設定（ここだけ書き換える）
+   CSV_URL: スプレッドシートの public シートを「ウェブに公開」した CSV の URL
+   ============================================================ */
+const CSV_URL = "ここに公開した CSV の URL を貼る";
+</script>
+<style>
+:root {
+  --paper: #fbf8f1;
+  --ink: #4a3b32;
+  --ink-soft: #7a6a5e;
+  --line: #e6ddd0;
+  --camellia: #e0707a;
+  --camellia-soft: #fbe5e6;
+  --teal: #3d9fa8;
+  --wood: #5b4637;
+  --white: #ffffff;
+  --font: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--paper) url("site/design/hemp-pat.png");
+}
+img { max-width: 100%; display: block; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+
+/* ---------- 条件の大きなアイコン ---------- */
+.finder {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 28px;
+  align-items: end;
+}
+.finder-art { display: flex; align-items: flex-end; gap: 4px; }
+.finder-art .bubble { width: 150px; margin-bottom: 150px; margin-right: -24px; }
+.finder-art .kaachan { width: 130px; }
+.finder-main h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: .04em;
+}
+.finder-main .lead { margin: 0 0 18px; color: var(--ink-soft); font-size: .95rem; }
+
+.big-filters {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.big {
+  width: 100%;
+  background: none; border: 0; padding: 8px 4px 10px;
+  border-radius: 18px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  transition: background-color .15s;
+}
+.big:hover { background: rgba(255,255,255,.6); }
+.big .disc {
+  position: relative;
+  width: 104px; height: 104px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  transition: filter .2s, opacity .2s, transform .2s;
+}
+.big .disc img { width: 100%; height: 100%; }
+.big .label { font-weight: 700; font-size: .95rem; line-height: 1.4; text-align: center; }
+.big .check {
+  position: absolute; right: -2px; top: -2px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--camellia); color: var(--white);
+  display: none; place-items: center;
+  font-size: 17px; font-weight: 700;
+  border: 3px solid var(--white);
+}
+.big[aria-pressed="true"] { background: var(--white); box-shadow: 0 0 0 3px var(--camellia) inset; }
+.big[aria-pressed="true"] .check { display: grid; }
+.big[aria-pressed="true"] .disc { transform: scale(1.04); }
+/* 何か選ばれているときは、選ばれていないアイコンを控えめに */
+.some-big .big[aria-pressed="false"] .disc { filter: grayscale(.85); opacity: .45; }
+.some-big .big[aria-pressed="false"] .label { color: var(--ink-soft); font-weight: 500; }
+
+/* ---------- 詳しい条件 ---------- */
+.more {
+  margin-top: 22px;
+  padding: 16px 18px;
+  background: rgba(255,255,255,.75);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px;
+}
+.more-title { font-weight: 700; margin-right: 4px; }
+.chip {
+  border: 1.5px solid var(--line);
+  background: var(--white);
+  border-radius: 999px;
+  padding: 5px 14px 5px 12px;
+  cursor: pointer;
+  font-size: .92rem;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chip::before {
+  content: ""; width: 14px; height: 14px; border-radius: 4px;
+  border: 1.5px solid var(--ink-soft); background: var(--white);
+}
+.chip[aria-pressed="true"] { border-color: var(--camellia); background: var(--camellia-soft); font-weight: 700; }
+.chip[aria-pressed="true"]::before {
+  border-color: var(--camellia); background: var(--camellia)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 7.2l2.6 2.6L11 4.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat;
+}
+.field { display: inline-flex; align-items: center; gap: 6px; font-size: .92rem; }
+.field select, .field input {
+  border: 1.5px solid var(--line); border-radius: 10px;
+  background: var(--white); padding: 5px 10px; min-height: 36px;
+}
+.field input { width: 16em; }
+.more .spacer { flex: 1 1 auto; }
+
+/* ---------- 件数 ---------- */
+.result-bar {
+  margin: 28px 0 14px;
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
+}
+.count { font-size: 1.05rem; }
+.count strong { font-size: 2rem; font-weight: 700; color: var(--camellia); margin-right: 4px; }
+.clear {
+  border: 0; background: none; padding: 2px 0; cursor: pointer;
+  color: var(--teal); text-decoration: underline; text-underline-offset: 3px; font-size: .92rem;
+}
+
+/* ---------- タイル ---------- */
+.tiles {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px;
+}
+.tile {
+  height: 100%;
+  width: 100%;
+  text-align: left;
+  background: var(--white);
+  border: 0; padding: 0; cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 1px 0 var(--line), 0 6px 18px -12px rgba(74,59,50,.45);
+}
+.tile:hover .photo img { transform: scale(1.03); }
+.photo { aspect-ratio: 4 / 3; overflow: hidden; background: #efe8dc url("site/design/folk.png") center/auto 55% no-repeat; }
+.photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.plate {
+  background: var(--wood) url("site/design/shop-name-bg.png");
+  color: var(--white);
+  padding: 8px 12px 9px;
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+.tile-body { padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.sub { font-size: .85rem; color: var(--ink-soft); line-height: 1.5; }
+.marks { display: flex; gap: 4px; flex-wrap: wrap; }
+.marks img { width: 30px; height: 30px; }
+.where { margin-top: auto; font-size: .85rem; line-height: 1.5; }
+.area {
+  display: inline-block; font-size: .78rem; font-weight: 700;
+  color: var(--teal); border: 1.5px solid currentColor; border-radius: 999px;
+  padding: 0 8px; margin-right: 6px;
+}
+
+.state { padding: 48px 12px; text-align: center; color: var(--ink-soft); }
+.state strong { display: block; color: var(--ink); font-size: 1.1rem; margin-bottom: 6px; }
+
+/* ---------- 詳細 ---------- */
+dialog {
+  width: min(760px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  padding: 0; border: 0; border-radius: 10px;
+  color: var(--ink); background: var(--paper) url("site/design/hemp-pat.png");
+}
+dialog::backdrop { background: rgba(60, 45, 35, .55); }
+.d-close {
+  position: sticky; top: 0; z-index: 2; float: right;
+  margin: 10px 10px 0 0;
+  border: 0; border-radius: 999px; padding: 6px 14px;
+  background: var(--white); cursor: pointer; font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+.gallery {
+  display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory;
+  background: #efe8dc;
+}
+.gallery img { height: 300px; width: auto; max-width: none; scroll-snap-align: start; }
+.d-plate { font-size: 1.35rem; padding: 12px 20px 13px; }
+.d-body { padding: 16px 20px 24px; }
+.d-sub { margin: 0 0 12px; color: var(--ink-soft); }
+.d-marks { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 16px; padding: 0; list-style: none; }
+.d-marks li { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .92rem; }
+.d-marks img { width: 36px; height: 36px; }
+.d-marks .tick {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--teal); color: var(--white);
+  display: grid; place-items: center; font-size: 13px;
+}
+.d-text { white-space: pre-line; margin: 0 0 16px; }
+.d-body h3 { font-size: 1rem; margin: 18px 0 4px; }
+.info { display: grid; grid-template-columns: 7em 1fr; gap: 6px 12px; margin: 18px 0 0; padding-top: 14px; border-top: 1.5px dashed var(--line); }
+.info dt { font-weight: 700; color: var(--ink-soft); }
+.info dd { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.actions a {
+  display: inline-block; padding: 8px 18px; border-radius: 999px; font-weight: 700;
+  text-decoration: none; background: var(--camellia); color: var(--white);
+}
+.actions a.secondary { background: var(--white); color: var(--ink); border: 1.5px solid var(--line); }
+a { color: var(--teal); }
+
+/* ---------- スマートフォン ---------- */
+@media (max-width: 760px) {
+  .wrap { padding: 16px 12px 48px; }
+  .finder { grid-template-columns: 1fr; }
+  .finder-art { display: none; }
+  .finder-main h1 { font-size: 1.25rem; }
+  .big-filters { gap: 4px; }
+  .big { padding: 6px 2px 8px; gap: 6px; }
+  .big .disc { width: 64px; height: 64px; }
+  .big .check { width: 24px; height: 24px; font-size: 13px; }
+  .big .label { font-size: .78rem; }
+  .field input { width: 100%; }
+  .field { width: 100%; }
+  .field.area-field select { flex: 1; }
+  .tiles { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .plate { font-size: .92rem; padding: 6px 10px 7px; }
+  .tile-body { padding: 8px 10px 12px; }
+  .marks img { width: 24px; height: 24px; }
+  .gallery img { height: 210px; }
+  .info { grid-template-columns: 1fr; gap: 0; }
+  .info dd { margin-bottom: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="finder" aria-labelledby="finder-title">
+    <div class="finder-art" aria-hidden="true">
+      <img class="bubble" id="bubble" src="site/design/hb-find-ja.png" alt="">
+      <img class="kaachan" src="site/design/hb-kaachan.png" alt="">
+    </div>
+    <div class="finder-main">
+      <h1 id="finder-title"></h1>
+      <p class="lead" id="lead"></p>
+      <ul class="big-filters" id="big-filters"></ul>
+    </div>
+  </section>
+
+  <div class="more" id="more">
+    <span class="more-title" id="more-title"></span>
+    <span id="chips" style="display:contents"></span>
+    <span class="spacer"></span>
+    <label class="field area-field"><span id="area-label"></span>
+      <select id="area"></select>
+    </label>
+    <label class="field">
+      <input id="q" type="search">
+    </label>
+  </div>
+
+  <div class="result-bar">
+    <p class="count" id="count" aria-live="polite" style="margin:0"></p>
+    <button class="clear" id="clear" type="button" hidden></button>
+  </div>
+
+  <ul class="tiles" id="tiles"></ul>
+  <div class="state" id="state"></div>
+</div>
+
+<dialog id="detail" aria-labelledby="d-name"></dialog>
+
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const LANG = params.get("lang") === "en" ? "en" : "ja";
+  const SRC = params.get("csv") || CSV_URL; // ?csv= は動作確認用
+  document.documentElement.lang = LANG;
+
+  const T = {
+    ja: {
+      title: "お店を探す",
+      lead: "アイコンを押すと、その対応があるお店に絞り込めます。いくつでも組み合わせられます。",
+      more: "詳しい条件",
+      area: "エリア",
+      allAreas: "すべて",
+      q: "店名・メニューで探す",
+      count: n => `<strong>${n}</strong>件のお店`,
+      clear: "条件をすべて外す",
+      loading: "お店の情報を読み込んでいます…",
+      failTitle: "お店の情報を読み込めませんでした",
+      failBody: "通信状況を確かめて、ページを再読み込みしてください。",
+      emptyTitle: "条件に合うお店がありません",
+      emptyBody: "条件をいくつか外すと、見つかりやすくなります。",
+      close: "閉じる",
+      menu: "主なメニュー",
+      address: "住所", phone: "電話", hours: "営業時間", closed: "定休日",
+      parking: "駐車場", smoking: "たばこ", website: "Webサイト",
+      smokeNo: "全席禁煙", smokeSep: "分煙",
+      noParking: "なし",
+      openMap: "Google マップで開く",
+      openSite: "Webサイトを見る",
+      photoOf: name => `${name}の写真`,
+    },
+    en: {
+      title: "Find a restaurant",
+      lead: "Tap an icon to see places that offer it. You can combine as many as you like.",
+      more: "More conditions",
+      area: "Area",
+      allAreas: "All",
+      q: "Search by name or menu",
+      count: n => `<strong>${n}</strong> ${n === 1 ? "place" : "places"}`,
+      clear: "Clear all conditions",
+      loading: "Loading restaurants…",
+      failTitle: "Couldn’t load the restaurant list",
+      failBody: "Check your connection and reload the page.",
+      emptyTitle: "No places match these conditions",
+      emptyBody: "Try removing one or two conditions.",
+      close: "Close",
+      menu: "Menu highlights",
+      address: "Address", phone: "Phone", hours: "Hours", closed: "Closed",
+      parking: "Parking", smoking: "Smoking", website: "Website",
+      smokeNo: "Non-smoking", smokeSep: "Separate smoking area",
+      noParking: "None",
+      openMap: "Open in Google Maps",
+      openSite: "Visit website",
+      photoOf: name => `Photo of ${name}`,
+    },
+  }[LANG];
+
+  // 大きなアイコンの 4 条件
+  const BIG = [
+    { key: "egg_milk_free", icon: "site/icon_egg_milk_free.png", ja: "卵・乳なしの\nメニューあり", en: "Egg & dairy-free\nmenu" },
+    { key: "wheat_free",    icon: "site/icon_wheat_free.png",    ja: "小麦なしの\nメニューあり",   en: "Wheat-free\nmenu" },
+    { key: "vegetarian",    icon: "site/icon_vegetarian.png",    ja: "ベジタリアン\n対応",          en: "Vegetarian\nfriendly" },
+    { key: "vegan",         icon: "site/icon_vegan.png",         ja: "ヴィーガン\n対応",            en: "Vegan\nfriendly" },
+  ];
+  // 詳しい条件
+  const SMALL = [
+    { key: "can_customize",      ja: "アレルゲンに応じて対応できる", en: "Can adjust for allergens" },
+    { key: "ingredients_listed", ja: "原材料を開示している",         en: "Ingredients disclosed" },
+    { key: "has_parking",        ja: "駐車場あり",                   en: "Parking available" },
+    { key: "no_smoking",         ja: "全席禁煙",                     en: "Non-smoking" },
+  ];
+  const ALL_KEYS = [...BIG, ...SMALL].map(f => f.key);
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const L = (row, base) => (LANG === "en" && row[base + "_en"]) ? row[base + "_en"] : (row[base + "_ja"] || "");
+  const yes = v => String(v).trim().toUpperCase() === "TRUE";
+
+  const state = { on: new Set(), area: "", q: "" };
+  let shops = [];
+
+  // ---------- 文言とフィルタ UI ----------
+  $("finder-title").textContent = T.title;
+  $("lead").textContent = T.lead;
+  $("more-title").textContent = T.more;
+  $("area-label").textContent = T.area;
+  $("q").placeholder = T.q;
+  $("q").setAttribute("aria-label", T.q);
+  $("clear").textContent = T.clear;
+  if (LANG === "en") $("bubble").src = "site/design/hb-find-en.png";
+  document.title = LANG === "en" ? "Find a restaurant | Kanazawa Food Barrier-Free Map" : document.title;
+
+  $("big-filters").innerHTML = BIG.map(f => `
+    <li><button class="big" type="button" aria-pressed="false" data-key="${f.key}">
+      <span class="disc"><img src="${f.icon}" alt=""><span class="check" aria-hidden="true">✓</span></span>
+      <span class="label">${esc(f[LANG]).replace("\n", "<br>")}</span>
+    </button></li>`).join("");
+  $("chips").innerHTML = SMALL.map(f =>
+    `<button class="chip" type="button" aria-pressed="false" data-key="${f.key}">${esc(f[LANG])}</button>`).join("");
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-key]");
+    if (!b) return;
+    const k = b.dataset.key;
+    state.on.has(k) ? state.on.delete(k) : state.on.add(k);
+    render();
+  });
+  $("area").addEventListener("change", e => { state.area = e.target.value; render(); });
+  $("q").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); render(); });
+  $("clear").addEventListener("click", () => {
+    state.on.clear(); state.area = ""; state.q = "";
+    $("area").value = ""; $("q").value = "";
+    render();
+  });
+
+  // URL の #egg_milk_free,wheat_free のような指定で、最初から絞り込む
+  const readHash = () => {
+    state.on = new Set(decodeURIComponent(location.hash.slice(1)).split(",").filter(k => ALL_KEYS.includes(k)));
+  };
+  readHash();
+  window.addEventListener("hashchange", () => { readHash(); render(); });
+
+  // ---------- CSV ----------
+  function parseCSV(text) {
+    const rows = []; let row = [], cell = "", q = false;
+    text = text.replace(/^\uFEFF/, "");
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cell); rows.push(row); row = []; cell = "";
+      } else cell += c;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    const head = rows.shift().map(h => h.trim());
+    return rows
+      .map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? "").trim()])))
+      .filter(r => r.shop_id && (r.name_ja || r.name_en));
+  }
+
+  function showState(title, body) {
+    $("tiles").innerHTML = "";
+    $("state").innerHTML = title ? `<strong>${esc(title)}</strong>${esc(body || "")}` : "";
+  }
+
+  // ---------- 描画 ----------
+  const images = s => (s.image_files || "").split(",").map(f => f.trim()).filter(Boolean);
+  const bigMarks = s => BIG.filter(f => yes(s[f.key]));
+
+  function matches(s) {
+    for (const k of state.on) if (!yes(s[k])) return false;
+    if (state.area && s.area_ja !== state.area) return false;
+    if (state.q) {
+      const hay = [s.name_ja, s.name_en, s.subname_ja, s.subname_en, s.menu_ja, s.menu_en, s.address_ja, s.address_en]
+        .join(" ").toLowerCase();
+      if (!hay.includes(state.q)) return false;
+    }
+    return true;
+  }
+
+  function render() {
+    document.querySelectorAll("[data-key]").forEach(b => b.setAttribute("aria-pressed", state.on.has(b.dataset.key)));
+    $("big-filters").classList.toggle("some-big", BIG.some(f => state.on.has(f.key)));
+    $("clear").hidden = !(state.on.size || state.area || state.q);
+    const h = [...state.on].join(",");
+    history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
+
+    if (!shops.length) return;
+    const list = shops.filter(matches);
+    $("count").innerHTML = T.count(list.length);
+    if (!list.length) { showState(T.emptyTitle, T.emptyBody); return; }
+    $("state").innerHTML = "";
+    $("tiles").innerHTML = list.map(s => {
+      const name = L(s, "name"), img = images(s)[0];
+      return `<li><button class="tile" type="button" data-id="${esc(s.shop_id)}">
+        <div class="photo">${img ? `<img loading="lazy" src="shops/${esc(img)}" alt="${esc(T.photoOf(name))}" onerror="this.remove()">` : ""}</div>
+        <div class="plate">${esc(name)}</div>
+        <div class="tile-body">
+          ${L(s, "subname") ? `<div class="sub">${esc(L(s, "subname"))}</div>` : ""}
+          <div class="marks">${bigMarks(s).map(f => `<img src="${f.icon}" alt="${esc(f[LANG].replace("\n", ""))}" title="${esc(f[LANG].replace("\n", ""))}">`).join("")}</div>
+          <div class="where">${L(s, "area") ? `<span class="area">${esc(L(s, "area"))}</span>` : ""}${esc(L(s, "address"))}</div>
+        </div>
+      </button></li>`;
+    }).join("");
+  }
+
+  $("tiles").addEventListener("click", e => {
+    const t = e.target.closest(".tile");
+    if (t) openDetail(shops.find(s => s.shop_id === t.dataset.id), t);
+  });
+
+  // ---------- 詳細 ----------
+  const dlg = $("detail");
+  let returnFocus = null;
+  function openDetail(s, from) {
+    returnFocus = from;
+    const name = L(s, "name");
+    const imgs = images(s);
+    const marks = [...BIG, ...SMALL].filter(f => yes(s[f.key]));
+    const smoke = yes(s.no_smoking) ? T.smokeNo : yes(s.separated_smoking) ? T.smokeSep : "";
+    const parking = yes(s.has_parking) ? (L(s, "parking") || "○") : T.noParking;
+    const map = s.lat && s.lng
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.lat + "," + s.lng)}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address_ja || name)}`;
+    const row = (k, v) => v ? `<dt>${esc(k)}</dt><dd>${v}</dd>` : "";
+
+    dlg.innerHTML = `
+      <button class="d-close" type="button" id="d-close">${esc(T.close)}</button>
+      ${imgs.length ? `<div class="gallery">${imgs.map((f, i) => `<img src="shops/${esc(f)}" alt="${esc(T.photoOf(name))} ${i + 1}" onerror="this.remove()">`).join("")}</div>` : ""}
+      <h2 class="plate d-plate" id="d-name" style="margin:0">${esc(name)}</h2>
+      <div class="d-body">
+        ${L(s, "subname") ? `<p class="d-sub">${esc(L(s, "subname"))}</p>` : ""}
+        ${marks.length ? `<ul class="d-marks">${marks.map(f => `<li>${f.icon ? `<img src="${f.icon}" alt="">` : `<span class="tick" aria-hidden="true">✓</span>`}${esc(f[LANG].replace("\n", ""))}</li>`).join("")}</ul>` : ""}
+        ${L(s, "description") ? `<p class="d-text">${esc(L(s, "description"))}</p>` : ""}
+        ${L(s, "menu") ? `<h3>${esc(T.menu)}</h3><p class="d-text">${esc(L(s, "menu"))}</p>` : ""}
+        <dl class="info">
+          ${row(T.address, esc(L(s, "address")))}
+          ${row(T.phone, s.phone ? `<a href="tel:${esc(s.phone.replace(/[^\d+]/g, ""))}">${esc(s.phone)}</a>` : "")}
+          ${row(T.hours, esc(L(s, "hours")))}
+          ${row(T.closed, esc(L(s, "closed")))}
+          ${row(T.parking, esc(parking))}
+          ${row(T.smoking, esc(smoke))}
+          ${row(T.website, s.website ? `<a href="${esc(s.website)}" target="_blank" rel="noopener">${esc(s.website)}</a>` : "")}
+        </dl>
+        <div class="actions">
+          <a href="${map}" target="_blank" rel="noopener">${esc(T.openMap)}</a>
+          ${s.website ? `<a class="secondary" href="${esc(s.website)}" target="_blank" rel="noopener">${esc(T.openSite)}</a>` : ""}
+        </div>
+      </div>`;
+    $("d-close").addEventListener("click", () => dlg.close());
+    // Google Sites などに埋め込まれて縦に長い枠で表示されているときは、押したタイルの近くに出す
+    if (window.self !== window.top && from) {
+      const top = from.getBoundingClientRect().top;
+      dlg.style.maxHeight = "760px";
+      dlg.style.marginTop = Math.max(12, Math.min(top, innerHeight - 772)) + "px";
+      dlg.style.marginBottom = "auto";
+    }
+    dlg.showModal();
+    dlg.scrollTop = 0;
+  }
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("close", () => { if (returnFocus) returnFocus.focus(); });
+
+  // ---------- 読み込み ----------
+  render();
+  showState(T.loading);
+  fetch(SRC, { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(text => {
+      shops = parseCSV(text);
+      if (!shops.length) throw new Error("empty");
+      const areas = [...new Map(shops.filter(s => s.area_ja).map(s => [s.area_ja, L(s, "area")])).entries()];
+      $("area").innerHTML = `<option value="">${esc(T.allAreas)}</option>` +
+        areas.map(([ja, label]) => `<option value="${esc(ja)}">${esc(label)}</option>`).join("");
+      render();
+    })
+    .catch(() => showState(T.failTitle, T.failBody));
+})();
+</script>
+</body>
+</html>

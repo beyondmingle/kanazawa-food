@@ -178,6 +178,11 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 1.02rem;
   line-height: 1.45;
 }
+.tile .plate, .pop .plate {
+  background: var(--white);
+  color: #2b2420;
+  border-bottom: 1px solid var(--line);
+}
 .tile-body { padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .sub { font-size: .85rem; color: var(--ink-soft); line-height: 1.5; }
 .marks { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -243,26 +248,32 @@ button, input, select { font: inherit; color: inherit; }
 
 /* ---------- 詳細 ---------- */
 dialog {
-  width: min(760px, calc(100% - 24px));
+  width: calc(100% - 24px);
+  max-width: none;
   max-height: calc(100% - 24px);
   padding: 0; border: 0; border-radius: 10px;
   color: var(--ink); background: var(--paper) url("site/design/hemp-pat.png");
 }
 dialog::backdrop { background: rgba(60, 45, 35, .55); }
+.d-top { position: sticky; top: 0; height: 0; z-index: 2; text-align: right; }
 .d-close {
-  position: sticky; top: 0; z-index: 2; float: right;
   margin: 10px 10px 0 0;
   border: 0; border-radius: 999px; padding: 6px 14px;
   background: var(--white); cursor: pointer; font-weight: 700;
   box-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
+/* 写真は何枚あっても横に並べて全部見せる */
 .gallery {
-  display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory;
+  display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 4px;
   background: #efe8dc;
 }
-.gallery img { height: 300px; width: auto; max-width: none; scroll-snap-align: start; }
+.gallery img { width: 100%; height: auto; aspect-ratio: 4 / 3; max-height: 340px; object-fit: cover; }
 .d-plate { font-size: 1.35rem; padding: 12px 20px 13px; }
 .d-body { padding: 16px 20px 24px; }
+@media (min-width: 900px) {
+  .d-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 40px; padding: 20px 28px 28px; }
+  .d-side .info { margin-top: 0; padding-top: 0; border-top: 0; }
+}
 .d-sub { margin: 0 0 12px; color: var(--ink-soft); }
 .d-marks { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 16px; padding: 0; list-style: none; }
 .d-marks li { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .92rem; }
@@ -302,7 +313,7 @@ a { color: var(--teal); }
   .plate { font-size: .92rem; padding: 6px 10px 7px; }
   .tile-body { padding: 8px 10px 12px; }
   .marks img { width: 24px; height: 24px; }
-  .gallery img { height: 210px; }
+  .gallery img { max-height: 200px; }
   .map { height: 460px; }
   .views { margin-left: 0; }
   .gmap { height: 220px; }
@@ -716,14 +727,17 @@ a { color: var(--teal); }
     const row = (k, v) => v ? `<dt>${esc(k)}</dt><dd>${v}</dd>` : "";
 
     dlg.innerHTML = `
-      <button class="d-close" type="button" id="d-close">${esc(T.close)}</button>
-      ${imgs.length ? `<div class="gallery">${imgs.map((f, i) => `<img src="shops/${esc(f)}" alt="${esc(T.photoOf(name))} ${i + 1}" onerror="this.remove()">`).join("")}</div>` : ""}
+      <div class="d-top"><button class="d-close" type="button" id="d-close">${esc(T.close)}</button></div>
+      ${imgs.length ? `<div class="gallery" style="--n:${imgs.length}">${imgs.map((f, i) => `<img src="shops/${esc(f)}" alt="${esc(T.photoOf(name))} ${i + 1}" onerror="this.remove()">`).join("")}</div>` : ""}
       <h2 class="plate d-plate" id="d-name" style="margin:0">${esc(name)}</h2>
       <div class="d-body">
+        <div class="d-main">
         ${L(s, "subname") ? `<p class="d-sub">${esc(L(s, "subname"))}</p>` : ""}
         ${marks.length ? `<ul class="d-marks">${marks.map(f => `<li>${f.icon ? `<img src="${f.icon}" alt="">` : `<span class="tick" aria-hidden="true">✓</span>`}${esc(f[LANG].replace("\n", ""))}</li>`).join("")}</ul>` : ""}
         ${L(s, "description") ? `<p class="d-text">${esc(L(s, "description"))}</p>` : ""}
         ${L(s, "menu") ? `<h3>${esc(T.menu)}</h3><p class="d-text">${esc(L(s, "menu"))}</p>` : ""}
+        </div>
+        <div class="d-side">
         <dl class="info">
           ${row(T.address, esc(L(s, "address")))}
           ${row(T.phone, s.phone ? `<a href="tel:${esc(s.phone.replace(/[^\d+]/g, ""))}">${esc(s.phone)}</a>` : "")}
@@ -737,6 +751,7 @@ a { color: var(--teal); }
         <div class="actions">
           <a href="${map}" target="_blank" rel="noopener">${esc(T.openMap)}</a>
           ${s.website ? `<a class="secondary" href="${esc(s.website)}" target="_blank" rel="noopener">${esc(T.openSite)}</a>` : ""}
+        </div>
         </div>
       </div>`;
     $("d-close").addEventListener("click", () => dlg.close());

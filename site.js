@@ -6,8 +6,8 @@
    NEWS_CSV_URL : スプレッドシートの news シートを「ウェブに公開」した CSV の URL
    ============================================================ */
 window.KF_CONFIG = {
-  SHOPS_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vThJRjCp8JlplPg2mhxV8q5BX23rqKfzHQjTR9ifDtTND8GU3pAn6VUJFCG-sh5dtlwdP9QI_CBckJz/pub?gid=747522636ここに public シートの CSV の URL を貼るsingle=trueここに public シートの CSV の URL を貼るoutput=csv",
-  NEWS_CSV_URL: "ここに news シートの CSV の URL を貼る",
+  SHOPS_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vThJRjCp8JlplPg2mhxV8q5BX23rqKfzHQjTR9ifDtTND8GU3pAn6VUJFCG-sh5dtlwdP9QI_CBckJz/pub?gid=747522636&single=true&output=csv",
+  NEWS_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vThJRjCp8JlplPg2mhxV8q5BX23rqKfzHQjTR9ifDtTND8GU3pAn6VUJFCG-sh5dtlwdP9QI_CBckJz/pub?gid=1664822782&single=true&output=csv",
   PAGE_SIZE: 20,       // お店を探す: 1 ページに表示するお店の数
   NEWS_PAGE_SIZE: 10,  // お知らせ一覧: 1 ページに表示する件数
 };
